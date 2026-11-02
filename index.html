@@ -26,7 +26,7 @@ h3{font-size:17px;margin:22px 0 8px}
 <main><div id="err"></div>
 <div class="bar">
   <label>Pos <select id="st"></select></label>
-  <span>Skenario Niño 3.4 <input id="o" type="number" step="0.1" min="-3" max="3"> DMI <input id="d" type="number" step="0.1" min="-2" max="2"></span>
+  <span>Skenario Niño 3.4 <input id="o" type="number" step="0.1" min="-4.5" max="4.5"> DMI <input id="d" type="number" step="0.1" min="-2" max="2"></span>
   <button data-s="obs">Observasi terakhir</button><button data-s="1,0">El Niño (+1,0)</button><button data-s="-1,0">La Niña (−1,0)</button>
   <button data-s="0,.8">IOD+ (+0,8)</button><button data-s="0,-.8">IOD− (−0,8)</button><button data-s="0,0">Netral</button>
 </div>
@@ -45,8 +45,8 @@ h3{font-size:17px;margin:22px 0 8px}
 <div class="cd" style="margin-bottom:12px"><h2>Tanggal tanam terbaik per pos</h2><table id="tp"></table></div>
 
 <p class="note"><b>Metode hujan:</b> baseline klimatologi 1999–2024; prediktor anomali Niño 3.4 (CPC, basis 1991–2020, rerata bulanan) dan DMI (NOAA PSL); regresi ridge per pos × bulan × lead dengan validasi leave-one-year-out. Bila skill ≤ ambang (SKMIN), prakiraan kembali ke klimatologi dan peluang = 33/33/33. Sifat hujan (BMKG): Atas Normal &gt;115%, Normal 85–115%, Bawah Normal &lt;85%. Skenario diasumsikan persisten. Dengan n = 26 tahun, korelasi |r| &gt; 0,39 baru signifikan (p&lt;0,05).<br>
-<b>Metode tanam:</b> neraca air harian sederhana. Hujan bulanan dibagi rata per hari (6 bulan pertama = prakiraan sesuai skenario, selanjutnya klimatologi); hujan efektif = 70% hujan. Kebutuhan air = penyiapan lahan 200 mm/14 hari + ETo×Kc + perkolasi. Defisit yang tak tertutup irigasi diberi bobot sensitivitas per fase (vegetatif 0,4; generatif 1,1; pemasakan 0,4) menjadi kehilangan hasil; ditambah penalti hujan lebat saat berbunga (&gt;10 mm/hari) dan saat panen (&gt;8 mm/hari). Skor = rerata skenario hujan-prakiraan dan hujan-kering (peluang terlampaui 80%). Umur varietas = hari sebar-panen, bibit dipindah umur 20 hari.<br>
-<b>Asumsi yang perlu dikalibrasi:</b> ETo 4 mm/hari, perkolasi 2 mm/hari, pengurang risiko kekeringan varietas toleran 15% per tingkat, hasil lapang = 65% potensi. Data varietas (array VAR) bersifat indikatif: cocokkan dengan Deskripsi Varietas Padi resmi dan rekomendasi BPSB/BRMP Sulbar. Model tidak memuat suhu (dataran tinggi Mamasa), tanah, hama-penyakit, atau debit irigasi. Gunakan bersama Kalender Tanam Terpadu Kementan dan produk BMKG.</p></main>
+<b>Metode tanam:</b> neraca air harian sederhana. Hujan bulanan dibagi rata per hari (6 bulan pertama = prakiraan sesuai skenario, selanjutnya klimatologi); hujan efektif = 85% hujan (gogo 70%). Kebutuhan air = penyiapan lahan 200 mm/14 hari + ETo×Kc + perkolasi. Defisit yang tak tertutup irigasi diberi bobot sensitivitas per fase (vegetatif 0,25; generatif 0,6; pemasakan 0,25; penyiapan lahan 0,1) menjadi kehilangan hasil; ditambah penalti hujan lebat saat berbunga (&gt;10 mm/hari) dan saat panen (&gt;8 mm/hari). Skor = rerata skenario hujan-prakiraan dan hujan-kering (peluang terlampaui 80%). Umur varietas = hari sebar-panen, bibit dipindah umur 20 hari.<br>
+<b>Asumsi yang perlu dikalibrasi:</b> ETo 4 mm/hari, perkolasi 1,5 mm/hari, pengurang risiko kekeringan varietas toleran 15% per tingkat, hasil lapang = 65% potensi (gogo 45%); peringkat rekomendasi memakai perkiraan hasil, bukan skor. Data varietas (array VAR) bersifat indikatif: cocokkan dengan Deskripsi Varietas Padi resmi dan rekomendasi BPSB/BRMP Sulbar. Model tidak memuat suhu (dataran tinggi Mamasa), tanah, hama-penyakit, atau debit irigasi. Gunakan bersama Kalender Tanam Terpadu Kementan dan produk BMKG.</p></main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script>
@@ -79,19 +79,14 @@ const VAR=[
  {n:'Inpari 30 Sub1',u:111,y:9.6,k:0,t:'Toleran rendaman ±2 minggu: lahan rawan banjir'},
  {n:'Inpari 38 THA',u:103,y:8.1,k:1,t:'Genjah, untuk tadah hujan'},
  {n:'Inpari 42 GSR',u:112,y:10.6,k:1,t:'Potensi tinggi, genjah'},
- {n:'Inpago 8 (gogo)',u:120,y:8.1,k:2,g:1,t:'Padi gogo lahan kering, tanpa penggenangan'}];
-const ETO=4,PERC=2,LP=14,NUR=20,KC=[1.05,1.2,.9],KY=[.4,1.1,.4];
+ {n:'Inpago 8 (gogo)',u:120,y:8.1,k:2,g:1,a:.45,t:'Padi gogo lahan kering, tanpa penggenangan'}];
+const ETO=4,PERC=1.5,LP=14,NUR=20,KC=[1.05,1.2,.9],KY=[.25,.6,.25];
 function series(s,o,d){
   const o2=[],f0=s.fc[0];
   for(let i=0;i<18;i++){
-    const a=m0(f0.m)+i,mm=a%12,yy=f0.y+Math.floor(a/12),n=new Date(yy,mm+1,0).getDate(),f=s.fc[i];let v=0,sd=0; // Set default 0
-    if(f){
-      const c=calc(f,'ch',o,d);v=c.v;sd=c.sd;
-    } else if (s.clim && s.clim.ch && s.clim.ch[mm]) { // <--- SAFETY CHECK DITAMBAHKAN
-      const e=s.clim.ch[mm];
-      v=e.mean;
-      sd=e.sd>0?e.sd:(e.p67-e.p33)/.8613;
-    }
+    const a=m0(f0.m)+i,mm=a%12,yy=f0.y+Math.floor(a/12),n=new Date(yy,mm+1,0).getDate(),f=s.fc[i];let v,sd;
+    if(f){const c=calc(f,'ch',o,d);v=c.v;sd=c.sd;}
+    else{const e=s.clim.ch[mm];v=e.mean;sd=e.sd>0?e.sd:(e.p67-e.p33)/.8613;}
     o2.push({y:yy,m:mm,n,v,p80:Math.max(0,v-.84*sd),fc:!!f});
   }
   return o2;
@@ -101,15 +96,15 @@ function sim(dy,T,v,q){
   const Dc=v.u-NUR,lp=v.g?0:LP,kq=v.g?0:q,A=dy.a;
   if(T+Dc>A.length)return null;
   const run=P=>{let lu=0,ld=0,us=[0,0,0],ds=[0,0,0];
-    for(let t=T-lp;t<T+Dc;t++){const pe=.7*P[t];let n,s=-1;
+    for(let t=T-lp;t<T+Dc;t++){const pe=(v.g?.7:.85)*P[t];let n,s=-1;
       if(t>=T){const fr=(t-T)/Dc;s=fr<.4?0:fr<.7?1:2;n=ETO*KC[s]+(v.g?0:PERC);}else n=200/lp;
       const u=Math.max(0,n-pe)*(1-kq);
       if(s<0){lu+=u;ld+=n;}else{us[s]+=u;ds[s]+=n;}}
-    return .3*(ld?lu/ld:0)+KY.reduce((a,k,i)=>a+k*us[i]/ds[i],0);};
+    return .1*(ld?lu/ld:0)+KY.reduce((a,k,i)=>a+k*us[i]/ds[i],0);};
   const mean=(x,y)=>{let s=0;for(let t=x;t<y;t++)s+=A[t];return s/(y-x);};
   const w=(mean((T+.4*Dc)|0,(T+.7*Dc)|0)>10?.08:0)+(mean(T+Dc-14,T+Dc)>8?.08:0),f=1-.15*v.k;
   const a=100*(1-Math.min(.95,run(dy.a)*f+w)),b=100*(1-Math.min(.95,run(dy.b)*f+w));
-  return{a,b,m:(a+b)/2,y:v.y*.65*(a+b)/200,fc:dy.f[T+Dc-1]};
+  return{a,b,m:(a+b)/2,y:v.y*(v.a||.65)*(a+b)/200,fc:dy.f[T+Dc-1]};
 }
 function plan(s,q){
   const ser=series(s,sc.o,sc.d),dy=days(ser),t0=new Date(ser[0].y,ser[0].m,1),cols=[];
@@ -117,16 +112,16 @@ function plan(s,q){
   return{t0,cols,res:VAR.map(v=>cols.map(T=>sim(dy,T,v,q)))};
 }
 const dl=(t0,T)=>{const x=new Date(t0.getFullYear(),t0.getMonth(),1+T);return x.getDate()+' '+MN[x.getMonth()];};
-const top=R=>{let b=null;R.res.forEach((r,i)=>r.forEach((c,j)=>{if(c&&(!b||c.m>b.c.m))b={i,j,c};}));return b;};
+const top=R=>{let b=null;R.res.forEach((r,i)=>r.forEach((c,j)=>{if(c&&(!b||c.y>b.c.y))b={i,j,c};}));return b;};
 function tanam(){
   const q=+$('wq').value,R=plan(S,q),{t0,cols,res}=R,b=top(R);
   $('hm').innerHTML='<table class="hm"><tr><th>Varietas (umur)</th>'+cols.map(T=>`<th>${dl(t0,T).replace(' ','<br>')}</th>`).join('')+'</tr>'
    +VAR.map((v,i)=>`<tr><td title="${v.t}">${v.n} (${v.u} hr)</td>`+res[i].map((c,j)=>c?`<td class="s${c.m>=75?3:c.m>=55?2:1}" title="Pindah tanam ${dl(t0,cols[j])}: skor hujan-prakiraan ${Math.round(c.a)}, hujan-kering ${Math.round(c.b)}, hasil ≈ ${c.y.toFixed(1)} t/ha${c.fc?'':' (sebagian siklus memakai klimatologi)'}">${Math.round(c.m)}</td>`:'<td>–</td>').join('')+'</tr>').join('')+'</table>';
   if(!b){$('rec').textContent='Data tidak cukup untuk simulasi.';return;}
-  const per=VAR.map((v,i)=>{let k=-1;res[i].forEach((c,j)=>{if(c&&(k<0||c.m>res[i][k].m))k=j;});return{i,k};}).filter(x=>x.k>=0).sort((x,y)=>res[y.i][y.k].m-res[x.i][x.k].m);
+  const per=VAR.map((v,i)=>{let k=-1;res[i].forEach((c,j)=>{if(c&&(k<0||c.y>res[i][k].y))k=j;});return{i,k};}).filter(x=>x.k>=0).sort((x,y)=>res[y.i][y.k].y-res[x.i][x.k].y);
   const ok=res[b.i].map((c,j)=>c&&c.m>=75?dl(t0,cols[j]):null).filter(Boolean);
   $('rec').innerHTML=`<h2>Rekomendasi pos ${S.name}</h2><p style="margin:0 0 6px"><b>Pindah tanam ±${dl(t0,cols[b.j])}</b> dengan <b>${VAR[b.i].n}</b>: skor ${Math.round(b.c.m)} (hujan-kering ${Math.round(b.c.b)}), hasil lapang indikatif ≈ ${b.c.y.toFixed(1)} t/ha.</p>
-  <div class="note">Jendela layak (skor ≥75) untuk ${VAR[b.i].n}: ${ok.join(', ')||'tidak ada'}.<br>Varietas pada tanggal terbaiknya: ${per.map(x=>`${VAR[x.i].n} → ${dl(t0,cols[x.k])} (${Math.round(res[x.i][x.k].m)})`).join('; ')}.</div>`;
+  <div class="note">Jendela layak (skor ≥75) untuk ${VAR[b.i].n}: ${ok.join(', ')||'tidak ada'}.<br>Varietas pada tanggal terbaiknya: ${per.map(x=>`${VAR[x.i].n} → ${dl(t0,cols[x.k])} (skor ${Math.round(res[x.i][x.k].m)}, ${res[x.i][x.k].y.toFixed(1)} t/ha)`).join('; ')}.</div>`;
   $('tp').innerHTML='<tr><th>Pos</th><th>Tanam terbaik</th><th>Varietas</th><th>Skor</th><th>Skor hujan-kering</th><th>Hasil (t/ha)</th></tr>'
    +D.stations.filter(s=>s.fc&&s.fc.length&&s.clim).map(s=>{const r=plan(s,q),t=top(r);return t?`<tr><td>${s.name}</td><td>${dl(r.t0,r.cols[t.j])}</td><td>${VAR[t.i].n}</td><td>${Math.round(t.c.m)}</td><td>${Math.round(t.c.b)}</td><td>${t.c.y.toFixed(1)}</td></tr>`:'';}).join('');
 }
@@ -177,7 +172,7 @@ fetch(DATA_URL+'?t='+Date.now()).then(r=>r.json()).then(r=>{
   lay=L.layerGroup().addTo(map);
   fetch('sulawesi-barat.json').then(x=>x.json()).then(g=>L.geoJSON(g,{pane:'batas',interactive:false,style:{color:'#64748b',weight:2,fillOpacity:.1}}).addTo(map))
     .catch(e=>console.error('Gagal memuat batas wilayah:',e));
-  const set=(o,d)=>{o=Math.max(-3,Math.min(3,+o||0));d=Math.max(-2,Math.min(2,+d||0));sc={o,d};$('o').value=o;$('d').value=d;render();};
+  const set=(o,d)=>{o=Math.max(-4.5,Math.min(4.5,+o||0));d=Math.max(-2,Math.min(2,+d||0));sc={o,d};$('o').value=o;$('d').value=d;render();};
   set(I.oni,I.dmi);$('st').onchange=render;$('wq').onchange=tanam;
   $('o').onchange=$('d').onchange=()=>set($('o').value,$('d').value);
   document.querySelectorAll('button[data-s]').forEach(b=>b.onclick=()=>{const v=b.dataset.s;v==='obs'?set(I.oni,I.dmi):set(...v.split(',').map(Number));});
