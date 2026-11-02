@@ -97,7 +97,7 @@ fetch(DATA_URL+'?t='+Date.now()).then(r=>r.json()).then(r=>{
   $('st').innerHTML=r.stations.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
   map=L.map('map').setView([-2.4,119.3],7);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);lay=L.layerGroup().addTo(map);
   // Memuat batas wilayah spasial dari sulbar.json
-  fetch('sulbar.json')
+  fetch('sulawesi-barat.json')
     .then(res => res.json())
     .then(geoData => {
       L.geoJSON(geoData, {
