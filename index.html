@@ -112,9 +112,9 @@ function plan(s,q){
   return{t0,cols,res:VAR.map(v=>cols.map(T=>sim(dy,T,v,q)))};
 }
 const dl=(t0,T)=>{const x=new Date(t0.getFullYear(),t0.getMonth(),1+T);return x.getDate()+' '+MN[x.getMonth()];};
-const top=R=>{let b=null;R.res.forEach((r,i)=>r.forEach((c,j)=>{if(c&&(!b||c.y>b.c.y))b={i,j,c};}));return b;};
+const bestOf=R=>{let b=null;R.res.forEach((r,i)=>r.forEach((c,j)=>{if(c&&(!b||c.y>b.c.y))b={i,j,c};}));return b;};
 function tanam(){
-  const q=+$('wq').value,R=plan(S,q),{t0,cols,res}=R,b=top(R);
+  const q=+$('wq').value,R=plan(S,q),{t0,cols,res}=R,b=bestOf(R);
   $('hm').innerHTML='<table class="hm"><tr><th>Varietas (umur)</th>'+cols.map(T=>`<th>${dl(t0,T).replace(' ','<br>')}</th>`).join('')+'</tr>'
    +VAR.map((v,i)=>`<tr><td title="${v.t}">${v.n} (${v.u} hr)</td>`+res[i].map((c,j)=>c?`<td class="s${c.m>=75?3:c.m>=55?2:1}" title="Pindah tanam ${dl(t0,cols[j])}: skor hujan-prakiraan ${Math.round(c.a)}, hujan-kering ${Math.round(c.b)}, hasil ≈ ${c.y.toFixed(1)} t/ha${c.fc?'':' (sebagian siklus memakai klimatologi)'}">${Math.round(c.m)}</td>`:'<td>–</td>').join('')+'</tr>').join('')+'</table>';
   if(!b){$('rec').textContent='Data tidak cukup untuk simulasi.';return;}
@@ -123,7 +123,7 @@ function tanam(){
   $('rec').innerHTML=`<h2>Rekomendasi pos ${S.name}</h2><p style="margin:0 0 6px"><b>Pindah tanam ±${dl(t0,cols[b.j])}</b> dengan <b>${VAR[b.i].n}</b>: skor ${Math.round(b.c.m)} (hujan-kering ${Math.round(b.c.b)}), hasil lapang indikatif ≈ ${b.c.y.toFixed(1)} t/ha.</p>
   <div class="note">Jendela layak (skor ≥75) untuk ${VAR[b.i].n}: ${ok.join(', ')||'tidak ada'}.<br>Varietas pada tanggal terbaiknya: ${per.map(x=>`${VAR[x.i].n} → ${dl(t0,cols[x.k])} (skor ${Math.round(res[x.i][x.k].m)}, ${res[x.i][x.k].y.toFixed(1)} t/ha)`).join('; ')}.</div>`;
   $('tp').innerHTML='<tr><th>Pos</th><th>Tanam terbaik</th><th>Varietas</th><th>Skor</th><th>Skor hujan-kering</th><th>Hasil (t/ha)</th></tr>'
-   +D.stations.filter(s=>s.fc&&s.fc.length&&s.clim).map(s=>{const r=plan(s,q),t=top(r);return t?`<tr><td>${s.name}</td><td>${dl(r.t0,r.cols[t.j])}</td><td>${VAR[t.i].n}</td><td>${Math.round(t.c.m)}</td><td>${Math.round(t.c.b)}</td><td>${t.c.y.toFixed(1)}</td></tr>`:'';}).join('');
+   +D.stations.filter(s=>s.fc&&s.fc.length&&s.clim).map(s=>{const r=plan(s,q),t=bestOf(r);return t?`<tr><td>${s.name}</td><td>${dl(r.t0,r.cols[t.j])}</td><td>${VAR[t.i].n}</td><td>${Math.round(t.c.m)}</td><td>${Math.round(t.c.b)}</td><td>${t.c.y.toFixed(1)}</td></tr>`:'';}).join('');
 }
 
 /* ===== Dashboard hujan ===== */
