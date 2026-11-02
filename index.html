@@ -84,9 +84,14 @@ const ETO=4,PERC=2,LP=14,NUR=20,KC=[1.05,1.2,.9],KY=[.4,1.1,.4];
 function series(s,o,d){
   const o2=[],f0=s.fc[0];
   for(let i=0;i<18;i++){
-    const a=m0(f0.m)+i,mm=a%12,yy=f0.y+Math.floor(a/12),n=new Date(yy,mm+1,0).getDate(),f=s.fc[i];let v,sd;
-    if(f){const c=calc(f,'ch',o,d);v=c.v;sd=c.sd;}
-    else{const e=s.clim.ch[mm];v=e.mean;sd=e.sd>0?e.sd:(e.p67-e.p33)/.8613;}
+    const a=m0(f0.m)+i,mm=a%12,yy=f0.y+Math.floor(a/12),n=new Date(yy,mm+1,0).getDate(),f=s.fc[i];let v=0,sd=0; // Set default 0
+    if(f){
+      const c=calc(f,'ch',o,d);v=c.v;sd=c.sd;
+    } else if (s.clim && s.clim.ch && s.clim.ch[mm]) { // <--- SAFETY CHECK DITAMBAHKAN
+      const e=s.clim.ch[mm];
+      v=e.mean;
+      sd=e.sd>0?e.sd:(e.p67-e.p33)/.8613;
+    }
     o2.push({y:yy,m:mm,n,v,p80:Math.max(0,v-.84*sd),fc:!!f});
   }
   return o2;
