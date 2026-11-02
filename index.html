@@ -40,7 +40,7 @@ Ini prakiraan statistik berbasis sampel 26 tahun; gunakan bersama produk resmi B
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script>
-const API_URL='https://script.google.com/macros/s/AKfycbz_ONKx1BAhYmMOxYX-EbU3WwHi0k9CQojewxsGe3jdrvmBl7ThcH5kCjPUBHAuRpnQ/exec';
+const API_URL='https://script.google.com/macros/s/AKfycbzLrJ0XKv2gooQpg8vYwlp_4EeP9UjsWQFBXkSanIVQJkKsfk09WkBmn3OLRxrxnT3n/exec';
 const MN=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'],$=i=>document.getElementById(i);
 const COL={BN:'#d97706',N:'#64748b',AN:'#0b8a5f'};
 let D,S,sc={o:0,d:0},ch={},map,lay;
@@ -93,7 +93,7 @@ function L2(s,p,k){L.circleMarker([s.lat,s.lon],{radius:s.id===S.id?11:8,color:'
 
 fetch(API_URL).then(r=>r.json()).then(r=>{
   if(r.error)throw new Error(r.error);
-  D=r;const I=r.idx;$('meta').textContent=`Data ${r.meta.y0}–${r.meta.y1} · ${r.meta.n} pos · Niño 3.4 terakhir: ${MN[I.m]} ${I.y} (${f1(I.oni)} °C) · DMI terakhir: ${MN[I.dm]} ${I.dy} (${f1(I.dmi)} °C)`;
+  D=r;const I=r.idx;$('meta').textContent=`Data ${r.meta.y0}–${r.meta.y1} · ${r.meta.n} pos · Niño 3.4 terakhir: ${MN[I.m]} ${I.y} (${f1(I.oni)} °C) · DMI terakhir: ${MN[I.dm]} ${I.dy} (${f1(I.dmi)} °C)${I.bom?' · IOD terbaru dari BoM (terkalibrasi)':''}`;
   $('st').innerHTML=r.stations.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
   map=L.map('map').setView([-2.4,119.3],7);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);lay=L.layerGroup().addTo(map);
   const set=(o,d)=>{sc={o,d};$('o').value=o;$('d').value=d;render();};
