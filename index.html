@@ -20,6 +20,8 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:6px 8px;b
 .note{color:var(--mu);font-size:12px;line-height:1.5}#err{color:#dc2626;padding:20px}
 .hm{font-size:11px}.hm th,.hm td{text-align:center;padding:4px 5px}.hm th:first-child,.hm td:first-child{text-align:left;position:sticky;left:0;background:var(--cd)}
 .s3{background:#0b8a5f66}.s2{background:#d9770666}.s1{background:#dc262666}
+/* Biru terang khusus untuk tanggal tanam terbaik tiap varietas */
+.s4{background:#0b6fa4;color:#fff;font-weight:bold;box-shadow:inset 0 0 0 2px #38bdf8}
 h3{font-size:17px;margin:22px 0 8px}
 </style></head><body>
 <header><h1>Hujan &amp; Jadwal Tanam Padi Sulawesi Barat</h1><div class="sub" id="meta">Memuat data…</div></header>
@@ -40,15 +42,23 @@ h3{font-size:17px;margin:22px 0 8px}
 
 <h3>Analisis jadwal tanam &amp; varietas padi</h3>
 <div class="bar"><label>Sumber air <select id="wq"><option value="0">Tadah hujan</option><option value=".5">Irigasi sederhana (menutup 50% defisit)</option><option value=".9">Irigasi teknis (menutup 90% defisit)</option></select></label><span class="note">Pos &amp; skenario ENSO/IOD mengikuti pilihan di atas.</span></div>
+<div class="input-group">
+  <label for="metode">Metode Tanam:</label>
+  <select id="metode" onchange="tanam()">
+    <option value="tapin">Tapin (Tanam Pindah)</option>
+    <option value="tabela">Tabela (Tanam Benih Langsung)</option>
+  </select>
+</div>
 <div class="cd" id="rec" style="margin-bottom:12px"></div>
-<div class="cd" style="margin-bottom:12px"><h2>Skor kelayakan (0–100): varietas × tanggal pindah tanam</h2><div id="hm"></div><p class="note">Hijau ≥75 layak · oranye 55–74 waspada · merah &lt;55 hindari. Arahkan kursor ke sel untuk rincian.</p></div>
+<div class="cd" style="margin-bottom:12px"><h2>Skor kelayakan (0–100): varietas × tanggal pindah tanam</h2><div id="hm"></div><p class="note">Hijau ≥75 layak · oranye 55–74 waspada · merah &lt;55 hindari · <b>biru = tanggal tanam terbaik varietas tsb</b> (hasil tertinggi). Arahkan kursor ke sel untuk rincian.</p></div>
 <div class="cd" style="margin-bottom:12px"><h2>Tanggal tanam terbaik per pos</h2><table id="tp"></table></div>
 
 <p class="note"><b>Metode hujan:</b> baseline klimatologi 1999–2024; prediktor anomali Niño 3.4 (CPC, basis 1991–2020, rerata bulanan) dan DMI (NOAA PSL); regresi ridge per pos × bulan × lead dengan validasi leave-one-year-out. Bila skill ≤ ambang (SKMIN), prakiraan kembali ke klimatologi dan peluang = 33/33/33. Sifat hujan (BMKG): Atas Normal &gt;115%, Normal 85–115%, Bawah Normal &lt;85%. Skenario diasumsikan persisten. Dengan n = 26 tahun, korelasi |r| &gt; 0,39 baru signifikan (p&lt;0,05).<br>
-<b>Metode tanam:</b> neraca air harian sederhana. Hujan bulanan dibagi rata per hari (6 bulan pertama = prakiraan sesuai skenario, selanjutnya klimatologi); hujan efektif = 85% hujan (gogo 70%). Kebutuhan air = penyiapan lahan 200 mm/14 hari + ETo×Kc + perkolasi. Defisit yang tak tertutup irigasi diberi bobot sensitivitas per fase (vegetatif 0,25; generatif 0,6; pemasakan 0,25; penyiapan lahan 0,1) menjadi kehilangan hasil; ditambah penalti hujan lebat saat berbunga (&gt;10 mm/hari) dan saat panen (&gt;8 mm/hari). Skor = rerata skenario hujan-prakiraan dan hujan-kering (peluang terlampaui 80%). Umur varietas = hari sebar-panen, bibit dipindah umur 20 hari.<br>
-<b>Asumsi yang perlu dikalibrasi:</b> ETo 4 mm/hari, perkolasi 1,5 mm/hari, pengurang risiko kekeringan varietas toleran 15% per tingkat, hasil lapang = 65% potensi (gogo 45%); peringkat rekomendasi memakai perkiraan hasil, bukan skor. Data varietas (array VAR) bersifat indikatif: cocokkan dengan Deskripsi Varietas Padi resmi dan rekomendasi BPSB/BRMP Sulbar. Model tidak memuat suhu (dataran tinggi Mamasa), tanah, hama-penyakit, atau debit irigasi. Gunakan bersama Kalender Tanam Terpadu Kementan dan produk BMKG.</p></main>
+<b>Metode tanam:</b> neraca air harian sederhana. Hujan bulanan dibagi rata per hari (6 bulan pertama = prakiraan sesuai skenario, selanjutnya klimatologi); hujan efektif = 85% hujan (gogo 70%). Kebutuhan air = penyiapan lahan 200 mm/14 hari + ETo×Kc + perkolasi. Defisit yang tak tertutup irigasi diberi bobot sensitivitas per fase (vegetatif 0,25; generatif 0,6; pemasakan 0,25; penyiapan lahan 0,1) menjadi kehilangan hasil; ditambah penalti hujan lebat saat berbunga (&gt;10 mm/hari) dan saat panen (&gt;8 mm/hari). Skor = rerata skenario hujan-prakiraan dan hujan-kering (peluang terlampaui 80%). Umur varietas = hari sebar-panen, bibit dipindah umur 20 hari (Tapin). Pada Tabela (tanam benih langsung), umur varietas dipotong 10 hari karena tidak ada stres pindah tanam, dan tidak ada persemaian sehingga seluruh umur dihitung di lahan utama.<br>
+<b>Asumsi yang perlu dikalibrasi:</b> ETo 4 mm/hari, perkolasi 1,5 mm/hari, pengurang risiko kekeringan varietas toleran 15% per tingkat, hasil lapang = 65% potensi (gogo 45%); peringkat rekomendasi memakai perkiraan hasil, bukan skor. Data varietas (dibaca dari Google Sheets) bersifat indikatif: cocokkan dengan Deskripsi Varietas Padi resmi dan rekomendasi BPSB/BRMP Sulbar. Model tidak memuat suhu (dataran tinggi Mamasa), tanah, hama-penyakit, atau debit irigasi. Gunakan bersama Kalender Tanam Terpadu Kementan dan produk BMKG.</p></main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script>
 const DATA_URL='data.json',SKMIN=0.05;
 const MN=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'],$=i=>document.getElementById(i);
@@ -71,8 +81,11 @@ const card=(a,b,c)=>`<div class="cd"><div class="ks">${a}</div><div class="kv">$
 const C=(id,cfg)=>{if(ch[id])ch[id].destroy();cfg.options=Object.assign({responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12}}}},cfg.options||{});ch[id]=new Chart($(id),cfg);};
 
 /* ===== Modul jadwal tanam padi ===== */
-// n=nama, u=umur sebar-panen (hari), y=potensi hasil (t/ha), k=toleransi kering (0-2), g=padi gogo, t=catatan. INDIKATIF: verifikasi ke deskripsi varietas resmi.
-const VAR=[
+// Data varietas dibaca dari Google Sheets (kolom: n=nama, u=umur sebar-panen (hari), y=potensi hasil (t/ha), k=toleransi kering (0-2), g=padi gogo, a=faktor hasil lapang, t=catatan). INDIKATIF: verifikasi ke deskripsi varietas resmi.
+let VAR=[];
+const SHEET_CSV_URL='https://docs.google.com/spreadsheets/d/1d-xYcQxGpiBQKDecFrzHizM031Up23msjtaDVQStLc0/export?format=csv';
+// Cadangan bila Google Sheets gagal dimuat
+const VAR_DEFAULT=[
  {n:'Ciherang',u:120,y:8.5,k:0,t:'Umum dipakai; butuh air cukup'},
  {n:'Mekongga',u:120,y:8.4,k:0,t:'Populer di Sulawesi'},
  {n:'Inpari 32 HDB',u:120,y:8.4,k:1,t:'Tahan HDB; BRMP Sulbar mendiseminasikan'},
@@ -92,8 +105,13 @@ function series(s,o,d){
   return o2;
 }
 function days(ser){const a=[],b=[],f=[];ser.forEach(x=>{for(let i=0;i<x.n;i++){a.push(x.v/x.n);b.push(x.p80/x.n);f.push(x.fc);}});return{a,b,f};}
-function sim(dy,T,v,q){
-  const Dc=v.u-NUR,lp=v.g?0:LP,kq=v.g?0:q,A=dy.a;
+// potongUmur>0 = Tabela: umur dipotong (tanpa stres pindah tanam) & tanpa persemaian
+function sim(dy,T,v,q,potongUmur){
+  const isTabela=potongUmur>0;
+  const uBaru=v.u-potongUmur;                 // umur total berkurang
+  const waktuPersemaian=isTabela?0:NUR;       // Tabela tidak ada persemaian
+  const Dc=uBaru-waktuPersemaian;             // hari irigasi di lahan utama
+  const lp=v.g?0:LP,kq=v.g?0:q,A=dy.a;
   if(T+Dc>A.length)return null;
   const run=P=>{let lu=0,ld=0,us=[0,0,0],ds=[0,0,0];
     for(let t=T-lp;t<T+Dc;t++){const pe=(v.g?.7:.85)*P[t];let n,s=-1;
@@ -106,24 +124,37 @@ function sim(dy,T,v,q){
   const a=100*(1-Math.min(.95,run(dy.a)*f+w)),b=100*(1-Math.min(.95,run(dy.b)*f+w));
   return{a,b,m:(a+b)/2,y:v.y*(v.a||.65)*(a+b)/200,fc:dy.f[T+Dc-1]};
 }
-function plan(s,q){
+function plan(s,q,potongUmur=0){
   const ser=series(s,sc.o,sc.d),dy=days(ser),t0=new Date(ser[0].y,ser[0].m,1),cols=[];
   for(let T=14;T<dy.a.length-90;T+=15)cols.push(T);
-  return{t0,cols,res:VAR.map(v=>cols.map(T=>sim(dy,T,v,q)))};
+  return{t0,cols,res:VAR.map(v=>cols.map(T=>sim(dy,T,v,q,potongUmur)))};
 }
 const dl=(t0,T)=>{const x=new Date(t0.getFullYear(),t0.getMonth(),1+T);return x.getDate()+' '+MN[x.getMonth()];};
 const bestOf=R=>{let b=null;R.res.forEach((r,i)=>r.forEach((c,j)=>{if(c&&(!b||c.y>b.c.y))b={i,j,c};}));return b;};
 function tanam(){
-  const q=+$('wq').value,R=plan(S,q),{t0,cols,res}=R,b=bestOf(R);
+  const metode=$('metode')?$('metode').value:'tapin';
+  const potongUmur=(metode==='tabela')?10:0;
+  const lbl=potongUmur>0?'Tanam (Tabela)':'Pindah tanam';
+  const q=+$('wq').value,R=plan(S,q,potongUmur),{t0,cols,res}=R,b=bestOf(R);
+  // indeks tanggal terbaik (hasil tertinggi) per varietas
+  const bestPerVar=res.map(row=>{let mi=-1,my=-1;row.forEach((c,j)=>{if(c&&c.y>my){my=c.y;mi=j;}});return mi;});
   $('hm').innerHTML='<table class="hm"><tr><th>Varietas (umur)</th>'+cols.map(T=>`<th>${dl(t0,T).replace(' ','<br>')}</th>`).join('')+'</tr>'
-   +VAR.map((v,i)=>`<tr><td title="${v.t}">${v.n} (${v.u} hr)</td>`+res[i].map((c,j)=>c?`<td class="s${c.m>=75?3:c.m>=55?2:1}" title="Pindah tanam ${dl(t0,cols[j])}: skor hujan-prakiraan ${Math.round(c.a)}, hujan-kering ${Math.round(c.b)}, hasil ≈ ${c.y.toFixed(1)} t/ha${c.fc?'':' (sebagian siklus memakai klimatologi)'}">${Math.round(c.m)}</td>`:'<td>–</td>').join('')+'</tr>').join('')+'</table>';
+   +VAR.map((v,i)=>{
+     const bestJ=bestPerVar[i];
+     return `<tr><td title="${v.t}">${v.n} (${v.u-potongUmur} hr)</td>`+res[i].map((c,j)=>{
+       if(!c)return '<td>–</td>';
+       const isBest=(j===bestJ);
+       const cls=isBest?'s4':(c.m>=75?'s3':(c.m>=55?'s2':'s1'));
+       return `<td class="${cls}" title="${isBest?'★ TANGGAL TANAM TERBAIK VARIETAS INI ★\n':''}${lbl} ${dl(t0,cols[j])}: skor hujan-prakiraan ${Math.round(c.a)}, hujan-kering ${Math.round(c.b)}, hasil ≈ ${c.y.toFixed(1)} t/ha${c.fc?'':' (sebagian siklus memakai klimatologi)'}">${Math.round(c.m)}</td>`;
+     }).join('')+'</tr>';
+   }).join('')+'</table>';
   if(!b){$('rec').textContent='Data tidak cukup untuk simulasi.';return;}
   const per=VAR.map((v,i)=>{let k=-1;res[i].forEach((c,j)=>{if(c&&(k<0||c.y>res[i][k].y))k=j;});return{i,k};}).filter(x=>x.k>=0).sort((x,y)=>res[y.i][y.k].y-res[x.i][x.k].y);
   const ok=res[b.i].map((c,j)=>c&&c.m>=75?dl(t0,cols[j]):null).filter(Boolean);
-  $('rec').innerHTML=`<h2>Rekomendasi pos ${S.name}</h2><p style="margin:0 0 6px"><b>Pindah tanam ±${dl(t0,cols[b.j])}</b> dengan <b>${VAR[b.i].n}</b>: skor ${Math.round(b.c.m)} (hujan-kering ${Math.round(b.c.b)}), hasil lapang indikatif ≈ ${b.c.y.toFixed(1)} t/ha.</p>
+  $('rec').innerHTML=`<h2>Rekomendasi pos ${S.name}</h2><p style="margin:0 0 6px"><b>${lbl} ±${dl(t0,cols[b.j])}</b> dengan <b>${VAR[b.i].n}</b>: skor ${Math.round(b.c.m)} (hujan-kering ${Math.round(b.c.b)}), hasil lapang indikatif ≈ ${b.c.y.toFixed(1)} t/ha.</p>
   <div class="note">Jendela layak (skor ≥75) untuk ${VAR[b.i].n}: ${ok.join(', ')||'tidak ada'}.<br>Varietas pada tanggal terbaiknya: ${per.map(x=>`${VAR[x.i].n} → ${dl(t0,cols[x.k])} (skor ${Math.round(res[x.i][x.k].m)}, ${res[x.i][x.k].y.toFixed(1)} t/ha)`).join('; ')}.</div>`;
   $('tp').innerHTML='<tr><th>Pos</th><th>Tanam terbaik</th><th>Varietas</th><th>Skor</th><th>Skor hujan-kering</th><th>Hasil (t/ha)</th></tr>'
-   +D.stations.filter(s=>s.fc&&s.fc.length&&s.clim).map(s=>{const r=plan(s,q),t=bestOf(r);return t?`<tr><td>${s.name}</td><td>${dl(r.t0,r.cols[t.j])}</td><td>${VAR[t.i].n}</td><td>${Math.round(t.c.m)}</td><td>${Math.round(t.c.b)}</td><td>${t.c.y.toFixed(1)}</td></tr>`:'';}).join('');
+   +D.stations.filter(s=>s.fc&&s.fc.length&&s.clim).map(s=>{const r=plan(s,q,potongUmur),t=bestOf(r);return t?`<tr><td>${s.name}</td><td>${dl(r.t0,r.cols[t.j])}</td><td>${VAR[t.i].n}</td><td>${Math.round(t.c.m)}</td><td>${Math.round(t.c.b)}</td><td>${t.c.y.toFixed(1)}</td></tr>`:'';}).join('');
 }
 
 /* ===== Dashboard hujan ===== */
@@ -162,7 +193,17 @@ function render(){
   tanam();
 }
 
-fetch(DATA_URL+'?t='+Date.now()).then(r=>r.json()).then(r=>{
+Promise.all([
+  fetch(DATA_URL+'?t='+Date.now()).then(r=>r.json()),
+  new Promise(resolve=>{
+    Papa.parse(SHEET_CSV_URL,{download:true,header:true,dynamicTyping:true,skipEmptyLines:true,
+      transformHeader:h=>h.trim(),
+      complete:res=>resolve(res.data.filter(x=>x&&x.n&&x.u&&x.y)),
+      error:()=>resolve([])});
+  })
+]).then(([r,sheetData])=>{
+  if(sheetData.length)VAR=sheetData;
+  else{VAR=VAR_DEFAULT;$('err').textContent='Peringatan: data varietas dari Google Sheets gagal dimuat, memakai data bawaan.';}
   if(r.error)throw new Error(r.error);
   D=r;const I=r.idx;B=I.hist.some(x=>x.m===12)?1:0; // deteksi bulan 1-12 vs 0-11
   $('meta').textContent=`Data ${r.meta.y0}–${r.meta.y1} · ${r.meta.n} pos · Niño 3.4 terakhir: ${MN[m0(I.m)]} ${I.y} (${f1(I.oni)} °C) · DMI terakhir: ${MN[m0(I.dm)]} ${I.dy} (${f1(I.dmi)} °C) · BoM: ${I.bomMsg} · diperbarui ${r.updated}`;
