@@ -23,7 +23,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:6px 8px;b
 <main><div id="err"></div>
 <div class="bar">
   <label>Pos <select id="st"></select></label>
-  <span>Skenario ONI <input id="o" type="number" step="0.1"> DMI <input id="d" type="number" step="0.1"></span>
+  <span>Skenario Niño 3.4 <input id="o" type="number" step="0.1"> DMI <input id="d" type="number" step="0.1"></span>
   <button data-s="obs">Observasi terakhir</button><button data-s="1,0">El Niño (+1,0)</button><button data-s="-1,0">La Niña (−1,0)</button>
   <button data-s="0,.8">IOD+ (+0,8)</button><button data-s="0,-.8">IOD− (−0,8)</button><button data-s="0,0">Netral</button>
 </div>
@@ -31,16 +31,16 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:6px 8px;b
 <div class="g c2"><div class="cd"><h2>Baseline klimatologi bulanan (CH &amp; hari hujan)</h2><div class="cv"><canvas id="c1"></canvas></div></div>
 <div class="cd"><h2>Prakiraan curah hujan 6 bulan ke depan</h2><div class="cv"><canvas id="c2"></canvas></div></div></div>
 <div class="cd" style="margin-bottom:12px"><h2>Tabel prakiraan</h2><table id="tb"></table></div>
-<div class="g c2"><div class="cd"><h2>Korelasi CH vs ONI &amp; DMI per bulan (1999–2024)</h2><div class="cv"><canvas id="c3"></canvas></div></div>
-<div class="cd"><h2>ONI &amp; DMI 36 bulan terakhir</h2><div class="cv"><canvas id="c4"></canvas></div></div></div>
+<div class="g c2"><div class="cd"><h2>Korelasi CH vs Niño 3.4 &amp; DMI per bulan (1999–2024)</h2><div class="cv"><canvas id="c3"></canvas></div></div>
+<div class="cd"><h2>Niño 3.4 &amp; DMI 36 bulan terakhir</h2><div class="cv"><canvas id="c4"></canvas></div></div></div>
 <div class="cd"><h2>Peta pos hujan — sifat hujan total 3 bulan ke depan</h2><div id="map"></div></div>
-<p class="note">Metode: baseline klimatologi 1999–2024; prediktor ONI &amp; DMI (NOAA PSL) pada bulan terakhir tersedia; regresi ridge per pos × bulan × lead dengan validasi leave-one-year-out.
+<p class="note">Metode: baseline klimatologi 1999–2024; prediktor anomali Niño 3.4 mingguan (CPC, basis 1991–2020, dirata-rata bulanan) dan DMI bulanan (NOAA PSL; nilai terakhir dibawa maju bila belum rilis); regresi ridge per pos × bulan × lead dengan validasi leave-one-year-out.
 Bila skill model ≤ 0, prakiraan kembali ke klimatologi. Sifat hujan (BMKG): Atas Normal &gt;115%, Normal 85–115%, Bawah Normal &lt;85% dari rata-rata. Skenario mengganti nilai ONI/DMI saat ini dan diasumsikan bertahan (persisten).
 Ini prakiraan statistik berbasis sampel 26 tahun; gunakan bersama produk resmi BMKG.</p></main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script>
-const API_URL='https://script.google.com/macros/s/AKfycbxucOgd3F6M7Ko_G8MXYzawVKcgvfZcfGpbsU1QWuhIQCKzHBoeDiYUwQ-JRtoVhEML/exec';
+const API_URL='https://script.google.com/macros/s/AKfycbz_ONKx1BAhYmMOxYX-EbU3WwHi0k9CQojewxsGe3jdrvmBl7ThcH5kCjPUBHAuRpnQ/exec';
 const MN=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'],$=i=>document.getElementById(i);
 const COL={BN:'#d97706',N:'#64748b',AN:'#0b8a5f'};
 let D,S,sc={o:0,d:0},ch={},map,lay;
@@ -62,7 +62,7 @@ function render(){
   const R=S.fc.map(f=>({f,c:calc(f,'ch',o,d),h:calc(f,'hh',o,d)}));
   const tot=n=>{const v=R.slice(0,n).reduce((s,x)=>s+x.c.v,0),m=R.slice(0,n).reduce((s,x)=>s+x.f.ch.mean,0);return[v,v/m*100];};
   const[v3,p3]=tot(3),[v6,p6]=tot(R.length),nu=R.filter(x=>x.c.use).length;
-  $('k').innerHTML=card('ENSO (ONI)',f1(o)+' °C',ph(o,.5,['La Niña','Netral','El Niño']))+card('IOD (DMI)',f1(d)+' °C',ph(d,.4,['IOD Negatif','Netral','IOD Positif']))
+  $('k').innerHTML=card('ENSO (Niño 3.4)',f1(o)+' °C',ph(o,.5,['La Niña','Netral','El Niño']))+card('IOD (DMI)',f1(d)+' °C',ph(d,.4,['IOD Negatif','Netral','IOD Positif']))
    +card('Total 3 bulan',Math.round(v3)+' mm',Math.round(p3)+'% normal · <b class="'+cat(p3)+'">'+lab[cat(p3)]+'</b>')
    +card('Total 6 bulan',Math.round(v6)+' mm',Math.round(p6)+'% normal · <b class="'+cat(p6)+'">'+lab[cat(p6)]+'</b>')
    +card('Sinyal ENSO/IOD',nu+' / '+R.length+' bulan','bulan dengan skill model &gt; 0 (selebihnya klimatologi)');
@@ -81,9 +81,9 @@ function render(){
   $('tb').innerHTML='<tr><th>Bulan</th><th>CH normal</th><th>CH prakiraan</th><th>% normal</th><th>Sifat</th><th>P(BB / N / AB) %</th><th>Hari hujan (prak./normal)</th><th>Dasar model</th></tr>'
    +R.map(x=>{const k=cat(x.c.pct);return`<tr><td>${MN[x.f.m]} ${x.f.y}</td><td>${Math.round(x.f.ch.mean)}</td><td>${Math.round(x.c.v)}</td><td>${Math.round(x.c.pct)}</td><td class="${k}">${lab[k]}</td>
    <td>${Math.round(x.c.bn*100)} / ${Math.round(x.c.n*100)} / ${Math.round(x.c.an*100)}</td><td>${Math.round(x.h.v)} / ${Math.round(x.f.hh.mean)}</td><td>${x.c.use?'ENSO+IOD (r_cv='+x.c.r.toFixed(2)+')':'klimatologi'}</td></tr>`;}).join('');
-  C('c3',{type:'bar',data:{labels:MN,datasets:[{label:'ONI',data:S.cor.oni,backgroundColor:'#ef4444aa'},{label:'DMI',data:S.cor.dmi,backgroundColor:'#0b6fa4aa'}]},options:{scales:{y:{min:-1,max:1}}}});
+  C('c3',{type:'bar',data:{labels:MN,datasets:[{label:'Niño 3.4',data:S.cor.oni,backgroundColor:'#ef4444aa'},{label:'DMI',data:S.cor.dmi,backgroundColor:'#0b6fa4aa'}]},options:{scales:{y:{min:-1,max:1}}}});
   const H=D.idx.hist;
-  C('c4',{type:'line',data:{labels:H.map(x=>MN[x.m]+' '+String(x.y).slice(2)),datasets:[{label:'ONI',data:H.map(x=>x.oni),borderColor:'#ef4444',tension:.3},{label:'DMI',data:H.map(x=>x.dmi),borderColor:'#0b6fa4',tension:.3}]}});
+  C('c4',{type:'line',data:{labels:H.map(x=>MN[x.m]+' '+String(x.y).slice(2)),datasets:[{label:'Niño 3.4',data:H.map(x=>x.oni),borderColor:'#ef4444',tension:.3},{label:'DMI',data:H.map(x=>x.dmi),borderColor:'#0b6fa4',tension:.3}]}});
   lay.clearLayers();
   D.stations.filter(s=>s.lat!=null).forEach(s=>{const p=fc3(s,o,d),k=cat(p);
     L2(s,p,k);});
@@ -93,7 +93,7 @@ function L2(s,p,k){L.circleMarker([s.lat,s.lon],{radius:s.id===S.id?11:8,color:'
 
 fetch(API_URL).then(r=>r.json()).then(r=>{
   if(r.error)throw new Error(r.error);
-  D=r;const I=r.idx;$('meta').textContent=`Data ${r.meta.y0}–${r.meta.y1} · ${r.meta.n} pos · indeks ENSO/IOD terakhir: ${MN[I.m]} ${I.y} (ONI ${f1(I.oni)}, DMI ${f1(I.dmi)})`;
+  D=r;const I=r.idx;$('meta').textContent=`Data ${r.meta.y0}–${r.meta.y1} · ${r.meta.n} pos · Niño 3.4 terakhir: ${MN[I.m]} ${I.y} (${f1(I.oni)} °C) · DMI terakhir: ${MN[I.dm]} ${I.dy} (${f1(I.dmi)} °C)`;
   $('st').innerHTML=r.stations.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
   map=L.map('map').setView([-2.4,119.3],7);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);lay=L.layerGroup().addTo(map);
   const set=(o,d)=>{sc={o,d};$('o').value=o;$('d').value=d;render();};
