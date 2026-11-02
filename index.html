@@ -96,6 +96,19 @@ fetch(DATA_URL+'?t='+Date.now()).then(r=>r.json()).then(r=>{
   D=r;const I=r.idx;$('meta').textContent=`Data ${r.meta.y0}–${r.meta.y1} · ${r.meta.n} pos · Niño 3.4 terakhir: ${MN[I.m]} ${I.y} (${f1(I.oni)} °C) · DMI terakhir: ${MN[I.dm]} ${I.dy} (${f1(I.dmi)} °C) · BoM: ${I.bomMsg} · diperbarui ${r.updated}`;
   $('st').innerHTML=r.stations.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
   map=L.map('map').setView([-2.4,119.3],7);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);lay=L.layerGroup().addTo(map);
+  // Memuat batas wilayah spasial dari sulbar.json
+  fetch('sulbar.json')
+    .then(res => res.json())
+    .then(geoData => {
+      L.geoJSON(geoData, {
+        style: {
+          color: "#64748b", // Warna garis tepi polygon
+          weight: 2,        // Ketebalan garis
+          fillOpacity: 0.1  // Tingkat transparansi area dalam (0 sampai 1)
+        }
+      }).addTo(map);
+    })
+    .catch(err => console.error("Gagal memuat peta sulbar.json:", err));
   const set=(o,d)=>{sc={o,d};$('o').value=o;$('d').value=d;render();};
   set(I.oni,I.dmi);$('st').onchange=render;
   $('o').onchange=$('d').onchange=()=>set(+$('o').value,+$('d').value);
