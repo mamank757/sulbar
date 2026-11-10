@@ -2,6 +2,7 @@ import os
 import requests
 import pandas as pd
 import numpy as np
+from io import StringIO
 
 def main():
     url = "https://www.bom.gov.au/clim_data/IDCK000072/rnino_3.4.txt"
@@ -9,15 +10,18 @@ def main():
     excel_output = 'nino34_bom_oni_format.xlsx'
     
     print(f"Mengunduh data dari: {url}")
-    response = requests.get(url)
+    
+    # Tambahkan headers dengan User-Agent agar tidak diblokir (Error 403)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
+    
+    response = requests.get(url, headers=headers)
     if response.status_code != 200:
         raise Exception(f"Gagal mendownload data. Status code: {response.status_code}")
     
-    # Simpan sementara atau baca langsung dari string buffer
-    from io import StringIO
-    f = StringIO(response.text)
-    
     # Membaca data teks BOM (mengabaikan baris komentar '#')
+    f = StringIO(response.text)
     df = pd.read_csv(
         f, 
         comment='#', 
