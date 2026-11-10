@@ -18,38 +18,33 @@ def main():
     if response.status_code != 200:
         raise Exception(f"Gagal mendownload data. Status code: {response.status_code}")
     
-    print("Berhasil mendownload. Menelaah isi file...")
-    lines = response.text.splitlines()
+    print("Berhasil mendownload. Membaca data dengan Pandas...")
     
-    # Filter baris komentar dan baris kosong
-    data_rows = []
-    for line in lines:
-        line = line.strip()
-        if not line or line.startswith('#'):
-            continue
-        # Pisahkan berdasarkan spasi/tab
-        parts = line.split()
-        if len(parts) >= 2:
-            data_rows.append([parts[0], parts[1]])
-            
-    print(f"Jumlah baris valid ditemukan: {len(data_rows)}")
-    if len(data_rows) == 0:
-        raise Exception("Tidak ada baris data valid yang ditemukan dari file BOM!")
-
-    # Buat DataFrame
-    df = pd.DataFrame(data_rows, columns=['Date', 'Relative_Nino34'])
+    # Membaca file teks, mengabaikan baris yang diawali dengan '#' atau karakter non-data
+    df = pd.read_csv(
+        StringIO(response.text),
+        comment='#',
+        sep=r'\s+',
+        header=None,
+        engine='python'
+    )
     
-    # Konversi tipe data
+    # Ambil kolom pertama sebagai Tanggal dan kolom kedua sebagai Nilai Anomali
+    df = df.iloc[:, [0, 1]]
+    df.columns = ['Date', 'Relative_Nino34']
+    
+    # Bersihkan data: ubah ke datetime dan numerik, buang baris NaN/invalid
     df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
     df['Relative_Nino34'] = pd.to_numeric(df['Relative_Nino34'], errors='coerce')
     
     df = df.dropna(subset=['Date', 'Relative_Nino34'])
     df.set_index('Date', inplace=True)
     
-    print(f"Baris setelah dibersihkan: {len(df)}")
-    
+    print(f"Total baris data valid setelah dibersihkan: {len(df)}")
+    if len(df) == 0:
+        raise Exception("DataFrame kosong setelah pembersihan!")
+
     # Agregasi dari mingguan ke rata-rata bulanan (Monthly Mean)
-    # Gunakan 'ME' untuk pandas versi terbaru, atau 'M' jika versi lama
     try:
         monthly_df = df.resample('ME')['Relative_Nino34'].mean().reset_index()
     except ValueError:
@@ -71,7 +66,7 @@ def main():
     # Export ke CSV & Excel
     monthly_df.to_csv(csv_output, index=False)
     monthly_df.to_excel(excel_output, index=False, engine='openpyxl')
-    print(f"[OK] Selesai! Total baris bulanan dihasilkan: {len(monthly_df)}")
+    print(f"[OK] Selesai! File CSV & Excel berhasil diperbarui dengan {len(monthly_df)} baris data.")
 
 if __name__ == '__main__':
     main()
