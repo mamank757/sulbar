@@ -2,7 +2,6 @@ import os
 import requests
 import pandas as pd
 import numpy as np
-from io import StringIO
 
 def main():
     url = "https://www.bom.gov.au/clim_data/IDCK000072/rnino_3.4.txt"
@@ -18,31 +17,33 @@ def main():
     if response.status_code != 200:
         raise Exception(f"Gagal mendownload data. Status code: {response.status_code}")
     
-    print("Berhasil mendownload. Membaca data dengan Pandas...")
+    print("Berhasil mendownload. Memproses baris teks...")
     
-    # Membaca file teks, mengabaikan baris yang diawali dengan '#' atau karakter non-data
-    df = pd.read_csv(
-        StringIO(response.text),
-        comment='#',
-        sep=r'\s+',
-        header=None,
-        engine='python'
-    )
+    # Parse baris teks secara manual untuk menghindari masalah format pandas separator
+    rows = []
+    for line in response.text.splitlines():
+        line = line.strip()
+        # Lewati baris kosong atau baris komentar '#'
+        if not line or line.startswith('#'):
+            continue
+        
+        parts = line.split()
+        if len(parts) >= 2:
+            rows.append({'Date': parts[0], 'Relative_Nino34': parts[1]})
+            
+    if not rows:
+        raise Exception("Tidak ada data yang berhasil diekstrak dari file teks BOM!")
+        
+    df = pd.DataFrame(rows)
     
-    # Ambil kolom pertama sebagai Tanggal dan kolom kedua sebagai Nilai Anomali
-    df = df.iloc[:, [0, 1]]
-    df.columns = ['Date', 'Relative_Nino34']
-    
-    # Bersihkan data: ubah ke datetime dan numerik, buang baris NaN/invalid
+    # Konversi tipe data
     df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
     df['Relative_Nino34'] = pd.to_numeric(df['Relative_Nino34'], errors='coerce')
     
     df = df.dropna(subset=['Date', 'Relative_Nino34'])
     df.set_index('Date', inplace=True)
     
-    print(f"Total baris data valid setelah dibersihkan: {len(df)}")
-    if len(df) == 0:
-        raise Exception("DataFrame kosong setelah pembersihan!")
+    print(f"Total baris valid ditemukan: {len(df)}")
 
     # Agregasi dari mingguan ke rata-rata bulanan (Monthly Mean)
     try:
@@ -66,7 +67,7 @@ def main():
     # Export ke CSV & Excel
     monthly_df.to_csv(csv_output, index=False)
     monthly_df.to_excel(excel_output, index=False, engine='openpyxl')
-    print(f"[OK] Selesai! File CSV & Excel berhasil diperbarui dengan {len(monthly_df)} baris data.")
+    print(f"[OK] Sukses! File CSV & Excel berhasil diperbarui dengan {len(monthly_df)} baris data.")
 
 if __name__ == '__main__':
     main()
