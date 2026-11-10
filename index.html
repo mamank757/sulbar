@@ -54,7 +54,7 @@ h3{font-size:17px;margin:22px 0 8px}
 <div class="cd" style="margin-bottom:12px"><h2>Skor kelayakan (0–100): varietas × tanggal pindah tanam</h2><div id="hm"></div><p class="note">Hijau ≥75 layak · oranye 55–74 waspada · merah &lt;55 hindari · <b>biru = tanggal tanam terbaik varietas tsb</b> (hasil tertinggi). Arahkan kursor ke sel untuk rincian.</p></div>
 <div class="cd" style="margin-bottom:12px"><h2>Tanggal tanam terbaik per pos</h2><table id="tp"></table></div>
 
-<p class="note"><b>Metode hujan:</b> baseline klimatologi 1999–2024; prediktor anomali Niño 3.4 (CPC, basis 1991–2020, rerata bulanan) dan DMI (NOAA PSL); regresi ridge per pos × bulan × lead dengan validasi leave-one-year-out. Bila skill ≤ ambang (SKMIN), prakiraan kembali ke klimatologi dan peluang = 33/33/33. Sifat hujan (BMKG): Atas Normal &gt;115%, Normal 85–115%, Bawah Normal &lt;85%. Skenario diasumsikan persisten. Dengan n = 26 tahun, korelasi |r| &gt; 0,39 baru signifikan (p&lt;0,05).<br>
+<p class="note"><b>Metode hujan:</b> baseline klimatologi 1999–2024; observasi terakhir, riwayat 36 bulan, dan skenario memakai Niño 3.4 relatif dan DMI dari BoM (data mingguan dirata-ratakan bulanan; tiap minggu masuk ke bulan menurut titik tengahnya, bulan dengan &lt;3 minggu data diabaikan). Koefisien model di data.json masih dilatih dengan Niño 3.4 CPC dan DMI NOAA PSL; regresi ridge per pos × bulan × lead dengan validasi leave-one-year-out. Bila skill ≤ ambang (SKMIN), prakiraan kembali ke klimatologi dan peluang = 33/33/33. Sifat hujan (BMKG): Atas Normal &gt;115%, Normal 85–115%, Bawah Normal &lt;85%. Skenario diasumsikan persisten. Dengan n = 26 tahun, korelasi |r| &gt; 0,39 baru signifikan (p&lt;0,05).<br>
 <b>Metode tanam:</b> neraca air harian sederhana. Hujan bulanan dibagi rata per hari (6 bulan pertama = prakiraan sesuai skenario, selanjutnya klimatologi); hujan efektif = 85% hujan (gogo 70%). Kebutuhan air = penyiapan lahan 200 mm/14 hari + ETo×Kc + perkolasi. Defisit yang tak tertutup irigasi diberi bobot sensitivitas per fase (vegetatif 0,25; generatif 0,6; pemasakan 0,25; penyiapan lahan 0,1) menjadi kehilangan hasil; ditambah penalti hujan lebat saat berbunga (&gt;10 mm/hari) dan saat panen (&gt;8 mm/hari). Skor = rerata skenario hujan-prakiraan dan hujan-kering (peluang terlampaui 80%). Umur varietas = hari sebar-panen, bibit dipindah umur 20 hari (Tapin). Pada Tabela (tanam benih langsung), umur varietas dipotong 10 hari karena tidak ada stres pindah tanam, dan tidak ada persemaian sehingga seluruh umur dihitung di lahan utama.<br>
 <b>Asumsi yang perlu dikalibrasi:</b> ETo 4 mm/hari, perkolasi 1,5 mm/hari, pengurang risiko kekeringan varietas toleran 15% per tingkat, hasil lapang = 65% potensi (gogo 45%); peringkat rekomendasi memakai perkiraan hasil, bukan skor. Data varietas (dibaca dari Google Sheets) bersifat indikatif: cocokkan dengan Deskripsi Varietas Padi resmi dan rekomendasi BPSB/BRMP Sulbar. Model tidak memuat suhu (dataran tinggi Mamasa), tanah, hama-penyakit, atau debit irigasi. Gunakan bersama Kalender Tanam Terpadu Kementan dan produk BMKG.</p></main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -62,6 +62,7 @@ h3{font-size:17px;margin:22px 0 8px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script>
 const DATA_URL='data.json',SKMIN=0.05;
+const ENSO_CSV='nino34_bom_oni_format.csv',IOD_CSV='iod_bom_dmi_format.csv';
 const MN=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'],$=i=>document.getElementById(i);
 const COL={BN:'#d97706',N:'#64748b',AN:'#0b8a5f'};
 let D,S,sc={o:0,d:0},ch={},map,lay,B=0;
@@ -71,7 +72,7 @@ const cat=p=>p>115?'AN':p<85?'BN':'N',lab={BN:'Bawah Normal',N:'Normal',AN:'Atas
 const ph=(v,t,l)=>v>=t?l[2]:v<=-t?l[0]:l[1],f1=x=>(+x).toFixed(1);
 function calc(f,k,o,d){
   const e=f[k],M=e.mod,ok=e.sd>0,use=ok&&!!M&&M.skill>SKMIN,sd=ok?e.sd:0,
-  z=use?M.mz+M.b1*(o-M.ma)/M.sa+M.b2*(d-M.mb)/M.sb:0,sg=use?M.rmse:1;
+  z=use?M.mz+M.b1*(CAL.o[0]+CAL.o[1]*o-M.ma)/M.sa+M.b2*(CAL.d[0]+CAL.d[1]*d-M.mb)/M.sb:0,sg=use?M.rmse:1;
   let v=Math.max(0,e.mean+z*sd);if(k==='hh')v=Math.min(v,dim(f));
   let bn=1/3,an=1/3;
   if(use){bn=Phi(((e.p33-e.mean)/sd-z)/sg);an=1-Phi(((e.p67-e.mean)/sd-z)/sg);}
@@ -193,7 +194,33 @@ function render(){
     .bindTooltip(s.name+': '+Math.round(p)+'% normal ('+lab[k]+')').on('click',()=>{$('st').value=s.id;render();});});
   tanam();
 }
-
+const getCsv=u=>new Promise(res=>Papa.parse(u+'?t='+Date.now(),{download:true,header:true,dynamicTyping:true,skipEmptyLines:true,complete:x=>res(x.data),error:()=>res([])}));
+let CAL={o:[0,1],d:[0,1]},calTxt='';
+const ols=(x,y)=>{const n=x.length;if(n<12)return null;
+  const mx=x.reduce((s,v)=>s+v,0)/n,my=y.reduce((s,v)=>s+v,0)/n;let sxx=0,sxy=0,syy=0;
+  x.forEach((v,i)=>{sxx+=(v-mx)**2;sxy+=(v-mx)*(y[i]-my);syy+=(y[i]-my)**2;});
+  if(sxx<1e-9||syy<1e-9)return null;const b=sxy/sxx;return{a:my-b*mx,b,r:sxy/Math.sqrt(sxx*syy),n};};
+// Ganti indeks SST (CPC/PSL) dengan indeks BoM dari CSV hasil process_enso.py & process_iod.py
+function applyBom(r,en,io){
+  const base=r.idx.hist.some(x=>x.m===12)?1:0, // ikuti konvensi bulan data.json (1-12 atau 0-11)
+        key=x=>x.Year*12+x.Month-1,
+        mk=(rows,col)=>{const m=new Map();rows.forEach(x=>{if(x&&x.Year&&typeof x[col]==='number'&&isFinite(x[col]))m.set(key(x),x[col]);});return m;},
+        E=mk(en,'Monthly_Anomaly'),Dm=mk(io,'Monthly_DMI');
+  if(!E.size||!Dm.size)return false;
+  // Kalibrasi skala BoM -> skala indeks lama (yang dipakai melatih model), lewat bulan yang tumpang tindih
+  CAL={o:[0,1],d:[0,1]};calTxt='';
+  [['o',E,'oni','Niño 3.4'],['d',Dm,'dmi','DMI']].forEach(([c,M,f,nm])=>{
+    const x=[],y=[];r.idx.hist.forEach(h=>{const k=h.y*12+h.m-base;if(M.has(k)&&typeof h[f]==='number'){x.push(M.get(k));y.push(h[f]);}});
+    const q=ols(x,y);
+    if(q&&q.r>=.8&&q.b>=.25&&q.b<=2){CAL[c]=[q.a,q.b];calTxt+=` · ${nm} skala model = ${q.a.toFixed(2)} + ${q.b.toFixed(2)}×BoM (r=${q.r.toFixed(2)}, n=${q.n})`;}
+    else calTxt+=` · ${nm}: tanpa kalibrasi`;
+  });
+  const last=m=>Math.max(...m.keys()),ke=last(E),kd=last(Dm),
+        ym=k=>({y:Math.floor(k/12),m:k%12+base}),hist=[];
+  for(let k=Math.max(ke,kd)-35;k<=Math.max(ke,kd);k++)hist.push({...ym(k),oni:E.has(k)?E.get(k):null,dmi:Dm.has(k)?Dm.get(k):null});
+  Object.assign(r.idx,{y:ym(ke).y,m:ym(ke).m,oni:E.get(ke),dy:ym(kd).y,dm:ym(kd).m,dmi:Dm.get(kd),hist,bomMsg:'rerata bulanan dari data mingguan'});
+  return true;
+}
 Promise.all([
   fetch(DATA_URL+'?t='+Date.now()).then(r=>r.json()),
   new Promise(resolve=>{
@@ -201,13 +228,16 @@ Promise.all([
       transformHeader:h=>h.trim(),
       complete:res=>resolve(res.data.filter(x=>x&&x.n&&x.u&&x.y)),
       error:()=>resolve([])});
-  })
-]).then(([r,sheetData])=>{
+   }),
+  getCsv(ENSO_CSV),getCsv(IOD_CSV)
+]).then(([r,sheetData,en,io])=>{
   if(sheetData.length)VAR=sheetData;
   else{VAR=VAR_DEFAULT;$('err').textContent='Peringatan: data varietas dari Google Sheets gagal dimuat, memakai data bawaan.';}
   if(r.error)throw new Error(r.error);
+    if(!applyBom(r,en,io))$('err').textContent+=' Peringatan: CSV Niño 3.4/DMI BoM gagal dimuat, memakai indeks bawaan data.json.';
   D=r;const I=r.idx;B=I.hist.some(x=>x.m===12)?1:0; // deteksi bulan 1-12 vs 0-11
   $('meta').textContent=`Data ${r.meta.y0}–${r.meta.y1} · ${r.meta.n} pos · Niño 3.4 terakhir: ${MN[m0(I.m)]} ${I.y} (${f1(I.oni)} °C) · DMI terakhir: ${MN[m0(I.dm)]} ${I.dy} (${f1(I.dmi)} °C) · BoM: ${I.bomMsg} · diperbarui ${r.updated}`;
+    $('meta').textContent+=calTxt;
   $('st').innerHTML=r.stations.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
   map=L.map('map').setView([-2.4,119.3],7);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
   map.createPane('batas');map.getPane('batas').style.zIndex=350; // di bawah penanda agar tooltip/klik tidak terhalang
